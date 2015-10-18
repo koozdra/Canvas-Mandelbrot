@@ -14,6 +14,21 @@ function start(canvas) {
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
   }
 
+  function getCursorPosition(canvas, event) {
+    canoffset = $(canvas).offset();
+    return {
+      x: event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft - Math.floor(canoffset.left),
+      y: event.clientY + document.body.scrollTop + document.documentElement.scrollTop - Math.floor(canoffset.top) + 1
+    };
+  }
+
+  function onClick (f) {
+    $(canvas).on('click', function(event) {
+      var pos = getCursorPosition(canvas, event);
+      f(pos.x, pos.y);
+    });
+  }
+
   // a lazy function definition that initializes the constants
   // on the first call to this function.  subsequent calls will
   // have the two variables in the scope.
@@ -61,9 +76,32 @@ function start(canvas) {
     r(f, 0);
   }
 
+  function mandelbrotRank (x, y, timeout) {
+    var i = 0,
+      zx = x,
+      zy = y;
+
+    while (zx*zx + zy*zy < 4 && i < timeout){
+      zx = zx*zx - zy*zy + x + offx;
+      zy = 2*zx*zy + y + offy;
+      i += 1;
+    }
+
+    return i;
+  }
+
+  //eachRow(function(row) {
+  //  eachColumnPixel(row, function(x,y) {
+  //    draw(black(pixel(x,y)))
+  //  });
+  //});
+
   eachRow(function(row) {
     eachColumnPixel(row, function(x,y) {
-      draw(black(pixel(x,y)))
+      //draw(black(pixel(x,y)))
+
     });
   });
+
+
 }
