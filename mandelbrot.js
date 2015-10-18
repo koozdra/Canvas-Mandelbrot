@@ -1,6 +1,18 @@
 function start(canvas) {
   var ctx = canvas.getContext("2d");
 
+  // messy canvas crap
+  if (window.devicePixelRatio > 1) {
+    var canvasWidth = canvas.width;
+    var canvasHeight = canvas.height;
+
+    canvas.width = canvasWidth * window.devicePixelRatio;
+    canvas.height = canvasHeight * window.devicePixelRatio;
+    canvas.style.width = canvasWidth;
+    canvas.style.height = canvasHeight;
+
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  }
 
   // a lazy function definition that initializes the constants
   // on the first call to this function.  subsequent calls will
@@ -38,15 +50,15 @@ function start(canvas) {
   }
 
   function eachRow(f){
-    eachRow = function (f, x) {
+    var r = function (f, x) {
       if (x >= canvas.height) return;
       
       f(x);
-      
-      //requestAnimationFrame(function(){ eachRow(f, x + 1) });
-      setTimeout(function(){ eachRow(f, x + 1) },0);
+
+      requestAnimationFrame(function(){ r(f, x + 1) });
+      //setTimeout(function(){ eachRow(f, x + 1) },0);
     };
-    eachRow(f, 0);
+    r(f, 0);
   }
 
   eachRow(function(row) {
