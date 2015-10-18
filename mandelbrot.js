@@ -15,6 +15,8 @@ function start(canvas) {
       drawPixelData[2] = b;
       drawPixelData[3] = a;
       ctx.putImageData(drawPixelId, x, y);
+      ctx.rect(x,y,3,3);
+      ctx.stroke();
     };
 
     drawPixel.apply(this, arguments);
@@ -33,11 +35,33 @@ function start(canvas) {
   }
 
 
+  function eachColumnPixel(y, pixel) {
+    _(_.range(0, canvas.width))
+      .each(_.partial(pixel, _, y))
+      .value();
+  }
+
+  //function eachColumnPixel(y, pixel) {
+  //  _(_.range(0, canvas.width))
+  //    .each(function(x) { pixel(x,y) })
+  //    .value();
+  //}
 
 
-  draw(black(pixel(10,10)));
 
+  function eachRow(f){
+    if (f >= canvas.height) return;
+    eachRow = function (f, x) {
+      f(x);
+      requestAnimationFrame(function(){ eachRow(f, x + 1) });
+    };
+    eachRow(f, 0);
+  }
 
-
-
+  eachRow(function(row) {
+    eachColumnPixel(row, function(x,y) {
+      //draw(black(pixel(x,y)))
+      drawPixel(x,y,0,0,0,1,ctx);
+    });
+  });
 }
