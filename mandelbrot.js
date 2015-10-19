@@ -1,5 +1,54 @@
 function start(canvas) {
   var ctx = canvas.getContext("2d");
+  var viewPort = {
+    x: -2,
+    y: -2,
+    width: 4,
+    height: 4
+  };
+
+  function clear() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+
+  function mapIntoViewPort(x, y, viewPort) {
+    return {
+      x: viewPort.x + x * (viewPort.width / canvas.width),
+      y: viewPort.y + y * (viewPort.height / canvas.height)
+    }
+  }
+
+  function scaleViewPort (s, viewPort) {
+    return _.extend({}, viewPort, {
+      width: viewPort.width * s,
+      height: viewPort.height * s
+    });
+  }
+
+  // creates a copy of a viewPort centered at x,y
+  function centerViewPort(x, y, viewPort) {
+    var vxy = mapIntoViewPort(x, y, viewPort);
+
+    return _.extend({}, viewPort, {
+      x: vxy.x - viewPort.width / 2,
+      y: vxy.y - viewPort.height / 2
+    });
+  }
+
+  // creates a copy of a viewPort centered at x,y
+  // and decreased in size by
+  function zoomViewPort(x, y, factor, viewPort) {
+    // incomplete...
+    return _.extend({}, viewPort, {
+      width: viewPort.width * factor,
+      height: viewPort.height * factor
+    });
+  }
+
+  function drawViewPort(viewPort) {
+    ctx.rect(viewPort.x, viewPort.y, viewPort.width, viewPort.height);
+    ctx.stroke();
+  }
 
   // messy canvas crap
   if (window.devicePixelRatio > 1) {
@@ -21,6 +70,8 @@ function start(canvas) {
       y: event.clientY + document.body.scrollTop + document.documentElement.scrollTop - Math.floor(canoffset.top) + 1
     };
   }
+
+
 
   function onClick (f) {
     $(canvas).on('click', function(event) {
@@ -53,6 +104,14 @@ function start(canvas) {
     return _.partial(f, 0, 0, 0, 255);
   }
 
+  function white(f) {
+    return _.partial(f, 255, 255, 255, 255);
+  }
+
+  function colored(f, r, g, b) {
+    return _.partial(f, r, g, b, 255);
+  }
+
   function draw(f) {
     return f(ctx);
   }
@@ -82,8 +141,12 @@ function start(canvas) {
       zy = y;
 
     while (zx*zx + zy*zy < 4 && i < timeout){
-      zx = zx*zx - zy*zy + x + offx;
-      zy = 2*zx*zy + y + offy;
+      var tx = zx*zx - zy*zy + x;
+      var ty = 2*zx*zy + y;
+
+      zx = tx;
+      zy = ty;
+
       i += 1;
     }
 
@@ -95,13 +158,70 @@ function start(canvas) {
   //    draw(black(pixel(x,y)))
   //  });
   //});
+  //
+  //eachRow(function(row) {
+  //  eachColumnPixel(row, function(x,y) {
+  //    draw(black(pixel(x,y)))
+  //
+  //  });
+  //});
+
+  //onClick(function(x, y) {
+  //  zoomViewPort(x, y, 0.5, );
+  //})
+
+
+  //onClick(function(x, y) {
+  //  clear();
+  //  viewPort = scaleViewPort(0.9, viewPort);
+  //  drawViewPort(viewPort);
+  //});
+
+  var colors = [[0,0,0],[255,255,255]];
 
   eachRow(function(row) {
     eachColumnPixel(row, function(x,y) {
-      //draw(black(pixel(x,y)))
+      var timeout = 10000;
+      var steps = 23;
+      var vxy = mapIntoViewPort(x, y, viewPort)
+      var rank = mandelbrotRank(vxy.x, vxy.y, timeout);
 
+      var p = pixel(x,y);
+
+      if (rank < timeout) {
+        var colorIndex = Math.floor(rank/steps) % colors.length;
+        var step = rank % steps;
+        var i = step / steps;
+
+        //draw(colored(pixel(x,y),
+        //  colors[colorIndex][0] + (colors[(colorIndex+1) % colors.length][0] - colors[colorIndex][0]) * i,
+        //  colors[colorIndex][1] + (colors[(colorIndex+1) % colors.length][1] - colors[colorIndex][1]) * i,
+        //  colors[colorIndex][2] + (colors[(colorIndex+1) % colors.length][2] - colors[colorIndex][2]) * i
+        //));
+
+        //draw(colored(pixel(x,y),
+        //  255 * timeout / steps,
+        //  255 * timeout / steps,
+        //  255 * timeout / steps
+        //))
+
+
+        draw(black(pixel(x, y)))
+      }
+      else{
+
+
+        draw(white(pixel(x,y)))
+      }
     });
   });
+
+  //console.log(mapIntoViewPort(0,0,viewPort));
+  //console.log(mapIntoViewPort(1,0,viewPort));
+
+
+
+
 
 
 }
