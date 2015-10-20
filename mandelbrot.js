@@ -1,10 +1,10 @@
 function start(canvas) {
   var ctx = canvas.getContext("2d");
   var viewPort = {
-    x: -2,
-    y: -2,
-    width: 4,
-    height: 4
+    x: 0,
+    y: 0,
+    width: canvas.width,
+    height: canvas.height
   };
 
   function clear() {
@@ -23,6 +23,21 @@ function start(canvas) {
       width: viewPort.width * s,
       height: viewPort.height * s
     });
+  }
+
+  function shiftViewPort (dx, dy, viewPort) {
+    return _.extend({}, viewPort, {
+      x: viewPort.x + dx,
+      y: viewPort.y + dy
+    });
+  }
+
+  function centerZoom(s, viewPort) {
+    return shiftViewPort(
+      (viewPort.width - (viewPort.width * s)) / 2,
+      (viewPort.height - (viewPort.height * s)) / 2,
+      scaleViewPort (s, viewPort)
+    );
   }
 
   // creates a copy of a viewPort centered at x,y
@@ -177,6 +192,10 @@ function start(canvas) {
   //  drawViewPort(viewPort);
   //});
 
+
+  viewPort = centerZoom(0.01, centerViewPort(-1, 0, viewPort));
+
+
   var colors = [[0,0,0],[255,255,255]];
 
   eachRow(function(row) {
@@ -221,6 +240,29 @@ function start(canvas) {
 
 
 
+  //function animate(fn) {
+  //  var halted = false;
+  //
+  //  var f = function() {
+  //    fn();
+  //    if (!halted) requestAnimationFrame(f);
+  //  }
+  //
+  //  f();
+  //
+  //  return {
+  //    halt: function() {
+  //      halted = true;
+  //    }
+  //  }
+  //}
+  //
+  //var animation = animate(function() {
+  //  console.log('yes');
+  //});
+  //setTimeout(function() {
+  //  animation.halt();
+  //}, 1000);
 
 
 
