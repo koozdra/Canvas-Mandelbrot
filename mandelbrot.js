@@ -42,11 +42,17 @@ function start(canvas) {
 
   // creates a copy of a viewPort centered at x,y
   function centerViewPort(x, y, viewPort) {
+    //var vxy = mapIntoViewPort(x, y, viewPort);
+    //
+    //return _.extend({}, viewPort, {
+    //  x: viewPort.x + vxy.x - viewPort.width / 2,
+    //  y: viewPort.y + vxy.y - viewPort.height / 2
+    //});
     var vxy = mapIntoViewPort(x, y, viewPort);
 
     return _.extend({}, viewPort, {
-      x: vxy.x - viewPort.width / 2,
-      y: vxy.y - viewPort.height / 2
+      x: viewPort.x + vxy.x - viewPort.width / 2,
+      y: viewPort.y + vxy.y - viewPort.height / 2
     });
   }
 
@@ -186,58 +192,77 @@ function start(canvas) {
   //})
 
 
-  //onClick(function(x, y) {
-  //  clear();
-  //  viewPort = scaleViewPort(0.9, viewPort);
-  //  drawViewPort(viewPort);
-  //});
 
+
+  function render() {
+
+    var colors = [[0, 0, 0], [255, 255, 255]];
+
+    eachRow(function (row) {
+      eachColumnPixel(row, function (x, y) {
+        var timeout = 10000;
+        var steps = 23;
+        var vxy = mapIntoViewPort(x, y, viewPort)
+        var rank = mandelbrotRank(vxy.x, vxy.y, timeout);
+
+        var p = pixel(x, y);
+
+        if (rank < timeout) {
+          var colorIndex = Math.floor(rank / steps) % colors.length;
+          var step = rank % steps;
+          var i = step / steps;
+
+          //draw(colored(pixel(x,y),
+          //  colors[colorIndex][0] + (colors[(colorIndex+1) % colors.length][0] - colors[colorIndex][0]) * i,
+          //  colors[colorIndex][1] + (colors[(colorIndex+1) % colors.length][1] - colors[colorIndex][1]) * i,
+          //  colors[colorIndex][2] + (colors[(colorIndex+1) % colors.length][2] - colors[colorIndex][2]) * i
+          //));
+
+          //draw(colored(pixel(x,y),
+          //  255 * timeout / steps,
+          //  255 * timeout / steps,
+          //  255 * timeout / steps
+          //))
+
+
+          draw(black(pixel(x, y)))
+        }
+        else {
+
+
+          draw(white(pixel(x, y)))
+        }
+      });
+    });
+  }
+
+  render();
 
   viewPort = centerZoom(0.01, centerViewPort(-1, 0, viewPort));
 
+  onClick(function(x, y) {
+    clear();
 
-  var colors = [[0,0,0],[255,255,255]];
+    //viewPort = centerZoom(0.9, viewPort);
+    //viewPort = centerZoom(0.5, centerViewPort(vxy.x, vxy.y, viewPort));
+    //viewPort = centerViewPort(x, y, viewPort);
 
-  eachRow(function(row) {
-    eachColumnPixel(row, function(x,y) {
-      var timeout = 10000;
-      var steps = 23;
-      var vxy = mapIntoViewPort(x, y, viewPort)
-      var rank = mandelbrotRank(vxy.x, vxy.y, timeout);
-
-      var p = pixel(x,y);
-
-      if (rank < timeout) {
-        var colorIndex = Math.floor(rank/steps) % colors.length;
-        var step = rank % steps;
-        var i = step / steps;
-
-        //draw(colored(pixel(x,y),
-        //  colors[colorIndex][0] + (colors[(colorIndex+1) % colors.length][0] - colors[colorIndex][0]) * i,
-        //  colors[colorIndex][1] + (colors[(colorIndex+1) % colors.length][1] - colors[colorIndex][1]) * i,
-        //  colors[colorIndex][2] + (colors[(colorIndex+1) % colors.length][2] - colors[colorIndex][2]) * i
-        //));
-
-        //draw(colored(pixel(x,y),
-        //  255 * timeout / steps,
-        //  255 * timeout / steps,
-        //  255 * timeout / steps
-        //))
+    var vxy = mapIntoViewPort(x, y, viewPort);
 
 
-        draw(black(pixel(x, y)))
-      }
-      else{
 
-
-        draw(white(pixel(x,y)))
-      }
+    console.log(viewPort, vxy);
+    viewPort = _.extend({}, viewPort, {
+      x: vxy.x - (viewPort.width / 2) + (vxy.x - viewPort.x),
+      y: vxy.y - (viewPort.height / 2) + (vxy.y - viewPort.y)
     });
+
+    viewPort = centerZoom (0.1, viewPort);
+
+    console.log(viewPort);
+
+    render();
   });
-
-  //console.log(mapIntoViewPort(0,0,viewPort));
-  //console.log(mapIntoViewPort(1,0,viewPort));
-
 
 
   //function animate(fn) {
