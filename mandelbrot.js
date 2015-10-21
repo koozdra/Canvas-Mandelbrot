@@ -42,12 +42,6 @@ function start(canvas) {
 
   // creates a copy of a viewPort centered at x,y
   function centerViewPort(x, y, viewPort) {
-    //var vxy = mapIntoViewPort(x, y, viewPort);
-    //
-    //return _.extend({}, viewPort, {
-    //  x: viewPort.x + vxy.x - viewPort.width / 2,
-    //  y: viewPort.y + vxy.y - viewPort.height / 2
-    //});
     var vxy = mapIntoViewPort(x, y, viewPort);
 
     return _.extend({}, viewPort, {
@@ -194,11 +188,11 @@ function start(canvas) {
 
 
 
-  function render() {
+  function renderRow(row) {
 
     var colors = [[0, 0, 0], [255, 255, 255]];
 
-    eachRow(function (row) {
+    //eachRow(function (row) {
       eachColumnPixel(row, function (x, y) {
         var timeout = 10000;
         var steps = 23;
@@ -212,28 +206,29 @@ function start(canvas) {
           var step = rank % steps;
           var i = step / steps;
 
-          //draw(colored(pixel(x,y),
-          //  colors[colorIndex][0] + (colors[(colorIndex+1) % colors.length][0] - colors[colorIndex][0]) * i,
-          //  colors[colorIndex][1] + (colors[(colorIndex+1) % colors.length][1] - colors[colorIndex][1]) * i,
-          //  colors[colorIndex][2] + (colors[(colorIndex+1) % colors.length][2] - colors[colorIndex][2]) * i
-          //));
-
-          //draw(colored(pixel(x,y),
-          //  255 * timeout / steps,
-          //  255 * timeout / steps,
-          //  255 * timeout / steps
-          //))
-
-
-          draw(black(pixel(x, y)))
+          draw(colored(pixel(x,y),
+            colors[colorIndex][0] + (colors[(colorIndex+1) % colors.length][0] - colors[colorIndex][0]) * i,
+            colors[colorIndex][1] + (colors[(colorIndex+1) % colors.length][1] - colors[colorIndex][1]) * i,
+            colors[colorIndex][2] + (colors[(colorIndex+1) % colors.length][2] - colors[colorIndex][2]) * i
+          ));
         }
         else {
 
 
-          draw(white(pixel(x, y)))
+          draw(black(pixel(x, y)))
         }
       });
-    });
+    //});
+  }
+
+
+  var row = 0;
+  function render() {
+    renderRow(row);
+    row += 1;
+    if (row < canvas.height) {
+      requestAnimationFrame(render);
+    }
   }
 
   render();
@@ -242,16 +237,9 @@ function start(canvas) {
 
   onClick(function(x, y) {
     clear();
-
-    //viewPort = centerZoom(0.9, viewPort);
-    //viewPort = centerZoom(0.5, centerViewPort(vxy.x, vxy.y, viewPort));
-    //viewPort = centerViewPort(x, y, viewPort);
-
+    row = 0;
     var vxy = mapIntoViewPort(x, y, viewPort);
 
-
-
-    console.log(viewPort, vxy);
     viewPort = _.extend({}, viewPort, {
       x: vxy.x - (viewPort.width / 2) + (vxy.x - viewPort.x),
       y: vxy.y - (viewPort.height / 2) + (vxy.y - viewPort.y)
@@ -259,28 +247,50 @@ function start(canvas) {
 
     viewPort = centerZoom (0.1, viewPort);
 
-    console.log(viewPort);
-
     render();
   });
 
 
-  //function animate(fn) {
+  //function iterate(fn,wh) {
   //  var halted = false;
+  //
+  //  function halt(){
+  //    halted = true;
+  //  }
   //
   //  var f = function() {
   //    fn();
-  //    if (!halted) requestAnimationFrame(f);
+  //    if (!halted && !wh(halt)) requestAnimationFrame(f);
   //  }
   //
   //  f();
-  //
-  //  return {
-  //    halt: function() {
-  //      halted = true;
-  //    }
-  //  }
   //}
+  //
+  //var row = 0;
+  //
+  //iterate(function() {
+  //  render(row);
+  //  row += 1;
+  //}, function(haltFn) {
+  //  if (row >= canvas.height) haltFn();
+  //});
+  //
+  //
+  //
+  //iterate(function() {
+  //  // draw row
+  //}, function(haltFn) {
+  //  // halt if end of screen reached
+  //
+  //  // continue iteration
+  //});
+  //
+  //iterate(function(haltFn, y){
+  //
+  //})
+  //
+  //
+  ////iterate(action, whileCondition(halt:Function))
   //
   //var animation = animate(function() {
   //  console.log('yes');
