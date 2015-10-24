@@ -95,42 +95,56 @@ function start(canvas) {
     });
   }
 
-  // a lazy function definition that initializes the constants
-  // on the first call to this function.  subsequent calls will
-  // have the two variables in the scope.
-  function drawPixel(x, y, r, g, b, a, ctx) {
-    var drawPixelId = ctx.createImageData(1,1);
-    var drawPixelData  = drawPixelId.data;
-
-    drawPixel = function(x, y, r, g, b, a, ctx) {
-      drawPixelData[0] = r;
-      drawPixelData[1] = g;
-      drawPixelData[2] = b;
-      drawPixelData[3] = a;
-      ctx.putImageData(drawPixelId, x, y);
-    };
+  function blackPixelColor() {
+    return [0,0,0,255];
   }
 
-  function pixel(x, y) {
-    return _.partial(drawPixel, x, y);
-  }
+  function mandelbrotPixelColor (x, y) {
+    function mandelbrotRank (x, y, timeout) {
+      var i = 0,
+        zx = x,
+        zy = y;
 
-  function black(f) {
-    return _.partial(f, 0, 0, 0, 255);
-  }
+      while (zx*zx + zy*zy < 4 && i < timeout){
+        var tx = zx*zx - zy*zy + x,
+          ty = 2*zx*zy + y;
 
-  function white(f) {
-    return _.partial(f, 255, 255, 255, 255);
-  }
+        zx = tx;
+        zy = ty;
 
-  function colored(f, r, g, b) {
-    return _.partial(f, r, g, b, 255);
-  }
+        i += 1;
+      }
 
-  function draw(f) {
-    return f(ctx);
-  }
+      return i;
+    }
 
+    var timeout = 10000,
+      steps = 23,
+      vxy = mapIntoViewPort(x, y, viewPort),
+      rank = mandelbrotRank(vxy.x, vxy.y, timeout),
+      colors = [[0, 0, 0], [255, 255, 255]],
+      color = [0,0,0];
+
+    if (rank < timeout) {
+      var colorIndex = Math.floor(rank / steps) % colors.length,
+        step = rank % steps,
+        div = step / steps;
+
+      //color = _.map(color, function(_, i) {
+      //  color[i] = colors[colorIndex][i]
+      //    + div * (colors[(colorIndex+1) % colors.length][i] - colors[colorIndex][i]);
+      //})
+
+      color[0] = colors[colorIndex][0] + (colors[(colorIndex+1) % colors.length][0] - colors[colorIndex][0]) * div;
+      color[1] = colors[colorIndex][1] + (colors[(colorIndex+1) % colors.length][1] - colors[colorIndex][1]) * div;
+      color[2] = colors[colorIndex][2] + (colors[(colorIndex+1) % colors.length][2] - colors[colorIndex][2]) * div;
+
+    }
+
+    color[3] = 255;
+
+    return color;
+  }
 
   function eachColumnPixel(y, pixel) {
     _(_.range(0, canvas.width))
@@ -138,93 +152,32 @@ function start(canvas) {
       .value();
   }
 
-  function eachRow(f){
-    var r = function (f, x) {
-      if (x >= canvas.height) return;
-      
-      f(x);
 
-      requestAnimationFrame(function(){ r(f, x + 1) });
-      //setTimeout(function(){ eachRow(f, x + 1) },0);
-    };
-    r(f, 0);
-  }
+  function renderRow(y, pixelColorFn) {
+    var ctxRow = ctx.createImageData(canvas.width, 1),
+      ctxRowData = ctxRow.data;
 
-  function mandelbrotRank (x, y, timeout) {
-    var i = 0,
-      zx = x,
-      zy = y;
+    renderRow = function(y, pixelColorFn) {
+      _.times(canvas.width, function(x) {
+        //console.log(x, y, pixelColorFn(x, y));
+        _.each(pixelColorFn(x, y), function(v, i) {
 
-    while (zx*zx + zy*zy < 4 && i < timeout){
-      var tx = zx*zx - zy*zy + x;
-      var ty = 2*zx*zy + y;
+          ctxRowData[4 * x + i] = v;
 
-      zx = tx;
-      zy = ty;
-
-      i += 1;
-    }
-
-    return i;
-  }
-
-  //eachRow(function(row) {
-  //  eachColumnPixel(row, function(x,y) {
-  //    draw(black(pixel(x,y)))
-  //  });
-  //});
-  //
-  //eachRow(function(row) {
-  //  eachColumnPixel(row, function(x,y) {
-  //    draw(black(pixel(x,y)))
-  //
-  //  });
-  //});
-
-  //onClick(function(x, y) {
-  //  zoomViewPort(x, y, 0.5, );
-  //})
-
-
-
-
-  function renderRow(row) {
-
-    var colors = [[0, 0, 0], [255, 255, 255]];
-
-    //eachRow(function (row) {
-      eachColumnPixel(row, function (x, y) {
-        var timeout = 10000;
-        var steps = 23;
-        var vxy = mapIntoViewPort(x, y, viewPort)
-        var rank = mandelbrotRank(vxy.x, vxy.y, timeout);
-
-        var p = pixel(x, y);
-
-        if (rank < timeout) {
-          var colorIndex = Math.floor(rank / steps) % colors.length;
-          var step = rank % steps;
-          var i = step / steps;
-
-          draw(colored(pixel(x,y),
-            colors[colorIndex][0] + (colors[(colorIndex+1) % colors.length][0] - colors[colorIndex][0]) * i,
-            colors[colorIndex][1] + (colors[(colorIndex+1) % colors.length][1] - colors[colorIndex][1]) * i,
-            colors[colorIndex][2] + (colors[(colorIndex+1) % colors.length][2] - colors[colorIndex][2]) * i
-          ));
-        }
-        else {
-
-
-          draw(black(pixel(x, y)))
-        }
+        });
       });
-    //});
-  }
+      //console.log(ctxRowData);
+      ctx.putImageData(ctxRow, 0, y);
+    };
 
+    renderRow(y, pixelColorFn);
+
+  }
 
   var row = 0;
   function render() {
-    renderRow(row);
+    renderRow(row, mandelbrotPixelColor);
+    //renderRow(row, blackPixelColor);
     row += 1;
     if (row < canvas.height) {
       requestAnimationFrame(render);
@@ -232,6 +185,9 @@ function start(canvas) {
   }
 
   render();
+
+  renderRow(100, mandelbrotPixelColor);
+  renderRow(100, blackPixelColor);
 
   viewPort = centerZoom(0.01, centerViewPort(-1, 0, viewPort));
 
@@ -249,55 +205,6 @@ function start(canvas) {
 
     render();
   });
-
-
-  //function iterate(fn,wh) {
-  //  var halted = false;
-  //
-  //  function halt(){
-  //    halted = true;
-  //  }
-  //
-  //  var f = function() {
-  //    fn();
-  //    if (!halted && !wh(halt)) requestAnimationFrame(f);
-  //  }
-  //
-  //  f();
-  //}
-  //
-  //var row = 0;
-  //
-  //iterate(function() {
-  //  render(row);
-  //  row += 1;
-  //}, function(haltFn) {
-  //  if (row >= canvas.height) haltFn();
-  //});
-  //
-  //
-  //
-  //iterate(function() {
-  //  // draw row
-  //}, function(haltFn) {
-  //  // halt if end of screen reached
-  //
-  //  // continue iteration
-  //});
-  //
-  //iterate(function(haltFn, y){
-  //
-  //})
-  //
-  //
-  ////iterate(action, whileCondition(halt:Function))
-  //
-  //var animation = animate(function() {
-  //  console.log('yes');
-  //});
-  //setTimeout(function() {
-  //  animation.halt();
-  //}, 1000);
 
 
 
