@@ -1,11 +1,39 @@
 function start(canvas) {
   var ctx = canvas.getContext("2d");
+  var ctxScale = 1;
   var viewPort = {
     x: 0,
     y: 0,
     width: canvas.width,
     height: canvas.height
   };
+
+  //------------------------------------------------
+  // messy canvas crap
+  if (window.devicePixelRatio > 1) {
+    var canvasWidth = canvas.width;
+    var canvasHeight = canvas.height;
+
+    canvas.width = canvasWidth * window.devicePixelRatio;
+    canvas.height = canvasHeight * window.devicePixelRatio;
+    canvas.style.width = canvasWidth;
+    canvas.style.height = canvasHeight;
+
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    ctxScale = window.devicePixelRatio;
+  }
+
+  function scalePixel(x, y) {
+    return [
+      x * ctxScale,
+      y * ctxScale
+    ];
+  }
+  //------------------------------------------------
+
+
+
+
 
   function clear() {
     ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -65,18 +93,7 @@ function start(canvas) {
     ctx.stroke();
   }
 
-  // messy canvas crap
-  if (window.devicePixelRatio > 1) {
-    var canvasWidth = canvas.width;
-    var canvasHeight = canvas.height;
 
-    canvas.width = canvasWidth * window.devicePixelRatio;
-    canvas.height = canvasHeight * window.devicePixelRatio;
-    canvas.style.width = canvasWidth;
-    canvas.style.height = canvasHeight;
-
-    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-  }
 
   function getCursorPosition(canvas, event) {
     canoffset = $(canvas).offset();
@@ -120,30 +137,35 @@ function start(canvas) {
 
     var timeout = 10000,
       steps = 23,
-      vxy = mapIntoViewPort(x, y, viewPort),
-      rank = mandelbrotRank(vxy.x, vxy.y, timeout),
-      colors = [[0, 0, 0], [255, 255, 255]],
-      color = [0,0,0];
+      colors = [[0, 0, 0], [255, 255, 255]];
 
-    if (rank < timeout) {
-      var colorIndex = Math.floor(rank / steps) % colors.length,
-        step = rank % steps,
-        div = step / steps;
+    mandelbrotPixelColor = function(x, y) {
+      var vxy = mapIntoViewPort(x, y, viewPort),
+        rank = mandelbrotRank(vxy.x, vxy.y, timeout),
+        color = [0, 0, 0];
 
-      //color = _.map(color, function(_, i) {
-      //  color[i] = colors[colorIndex][i]
-      //    + div * (colors[(colorIndex+1) % colors.length][i] - colors[colorIndex][i]);
-      //})
+      if (rank < timeout) {
+        var colorIndex = Math.floor(rank / steps) % colors.length,
+          step = rank % steps,
+          div = step / steps;
 
-      color[0] = colors[colorIndex][0] + (colors[(colorIndex+1) % colors.length][0] - colors[colorIndex][0]) * div;
-      color[1] = colors[colorIndex][1] + (colors[(colorIndex+1) % colors.length][1] - colors[colorIndex][1]) * div;
-      color[2] = colors[colorIndex][2] + (colors[(colorIndex+1) % colors.length][2] - colors[colorIndex][2]) * div;
+        //color = _.map(color, function(_, i) {
+        //  color[i] = colors[colorIndex][i]
+        //    + div * (colors[(colorIndex+1) % colors.length][i] - colors[colorIndex][i]);
+        //})
 
+        color[0] = colors[colorIndex][0] + (colors[(colorIndex + 1) % colors.length][0] - colors[colorIndex][0]) * div;
+        color[1] = colors[colorIndex][1] + (colors[(colorIndex + 1) % colors.length][1] - colors[colorIndex][1]) * div;
+        color[2] = colors[colorIndex][2] + (colors[(colorIndex + 1) % colors.length][2] - colors[colorIndex][2]) * div;
+
+      }
+
+      color[3] = 255;
+
+      return color;
     }
 
-    color[3] = 255;
-
-    return color;
+    return mandelbrotPixelColor(x, y);
   }
 
   function eachColumnPixel(y, pixel) {
@@ -186,20 +208,29 @@ function start(canvas) {
 
   render();
 
-  renderRow(100, mandelbrotPixelColor);
-  renderRow(100, blackPixelColor);
-
   viewPort = centerZoom(0.01, centerViewPort(-1, 0, viewPort));
 
   onClick(function(x, y) {
+
+    var scaled = scalePixel(x, y);
+
     clear();
     row = 0;
     var vxy = mapIntoViewPort(x, y, viewPort);
 
+    //var vxy = _.partial(mapIntoViewPort, scalePixel(x,y))(viewPort);
+    //var vxy = mapIntoViewPort(scaled[0], scaled[1], viewPort);
+
+    //viewPort = _.extend({}, viewPort, {
+    //  x: vxy.x - (viewPort.width / 2) + (vxy.x - viewPort.x),
+    //  y: vxy.y - (viewPort.height / 2) + (vxy.y - viewPort.y)
+    //});
+
     viewPort = _.extend({}, viewPort, {
-      x: vxy.x - (viewPort.width / 2) + (vxy.x - viewPort.x),
-      y: vxy.y - (viewPort.height / 2) + (vxy.y - viewPort.y)
+      x: 2 * vxy.x - (viewPort.width / 2) - viewPort.x,
+      y: 2 * vxy.y - (viewPort.height / 2) - viewPort.y
     });
+
 
     viewPort = centerZoom (0.1, viewPort);
 
