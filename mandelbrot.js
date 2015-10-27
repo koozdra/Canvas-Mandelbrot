@@ -213,28 +213,18 @@ function start(canvas) {
   onClick(function(x, y) {
 
     var scaled = scalePixel(x, y);
+    var vxy = mapIntoViewPort(scaled[0], scaled[1], viewPort);
+    viewPort = _.extend({}, viewPort, {
+      x: vxy.x - (viewPort.width / 2),
+      y: vxy.y - (viewPort.height / 2)
+    });
+    
+    viewPort = centerZoom (0.1, viewPort);
 
     clear();
     row = 0;
-    var vxy = mapIntoViewPort(x, y, viewPort);
-
-    //var vxy = _.partial(mapIntoViewPort, scalePixel(x,y))(viewPort);
-    //var vxy = mapIntoViewPort(scaled[0], scaled[1], viewPort);
-
-    //viewPort = _.extend({}, viewPort, {
-    //  x: vxy.x - (viewPort.width / 2) + (vxy.x - viewPort.x),
-    //  y: vxy.y - (viewPort.height / 2) + (vxy.y - viewPort.y)
-    //});
-
-    viewPort = _.extend({}, viewPort, {
-      x: 2 * vxy.x - (viewPort.width / 2) - viewPort.x,
-      y: 2 * vxy.y - (viewPort.height / 2) - viewPort.y
-    });
-
-
-    viewPort = centerZoom (0.1, viewPort);
-
     render();
+
   });
 
 
