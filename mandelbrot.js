@@ -30,11 +30,7 @@ function start(canvas) {
     ];
   }
   //------------------------------------------------
-
-
-
-
-
+  
   function clear() {
     ctx.clearRect(0,0,canvas.width,canvas.height);
   }
@@ -72,9 +68,13 @@ function start(canvas) {
   function centerViewPort(x, y, viewPort) {
     var vxy = mapIntoViewPort(x, y, viewPort);
 
+    //return _.extend({}, viewPort, {
+    //  x: viewPort.x + vxy.x - viewPort.width / 2,
+    //  y: viewPort.y + vxy.y - viewPort.height / 2
+    //});
     return _.extend({}, viewPort, {
-      x: viewPort.x + vxy.x - viewPort.width / 2,
-      y: viewPort.y + vxy.y - viewPort.height / 2
+      x: vxy.x - viewPort.width / 2,
+      y: vxy.y - viewPort.height / 2
     });
   }
 
@@ -149,15 +149,10 @@ function start(canvas) {
           step = rank % steps,
           div = step / steps;
 
-        //color = _.map(color, function(_, i) {
-        //  color[i] = colors[colorIndex][i]
-        //    + div * (colors[(colorIndex+1) % colors.length][i] - colors[colorIndex][i]);
-        //})
-
-        color[0] = colors[colorIndex][0] + (colors[(colorIndex + 1) % colors.length][0] - colors[colorIndex][0]) * div;
-        color[1] = colors[colorIndex][1] + (colors[(colorIndex + 1) % colors.length][1] - colors[colorIndex][1]) * div;
-        color[2] = colors[colorIndex][2] + (colors[(colorIndex + 1) % colors.length][2] - colors[colorIndex][2]) * div;
-
+        color = _.map(color, function(_, i) {
+          return colors[colorIndex][i]
+            + div * (colors[(colorIndex+1) % colors.length][i] - colors[colorIndex][i]);
+        })
       }
 
       color[3] = 255;
@@ -174,21 +169,18 @@ function start(canvas) {
       .value();
   }
 
-
+  // y: row
+  // pixelColorFn: (x,y) => [r,g,b,a]
   function renderRow(y, pixelColorFn) {
     var ctxRow = ctx.createImageData(canvas.width, 1),
       ctxRowData = ctxRow.data;
 
     renderRow = function(y, pixelColorFn) {
       _.times(canvas.width, function(x) {
-        //console.log(x, y, pixelColorFn(x, y));
         _.each(pixelColorFn(x, y), function(v, i) {
-
           ctxRowData[4 * x + i] = v;
-
         });
       });
-      //console.log(ctxRowData);
       ctx.putImageData(ctxRow, 0, y);
     };
 
@@ -199,7 +191,6 @@ function start(canvas) {
   var row = 0;
   function render() {
     renderRow(row, mandelbrotPixelColor);
-    //renderRow(row, blackPixelColor);
     row += 1;
     if (row < canvas.height) {
       requestAnimationFrame(render);
@@ -213,20 +204,11 @@ function start(canvas) {
   onClick(function(x, y) {
 
     var scaled = scalePixel(x, y);
-    var vxy = mapIntoViewPort(scaled[0], scaled[1], viewPort);
-    viewPort = _.extend({}, viewPort, {
-      x: vxy.x - (viewPort.width / 2),
-      y: vxy.y - (viewPort.height / 2)
-    });
-    
-    viewPort = centerZoom (0.1, viewPort);
+    viewPort = centerZoom (0.2, centerViewPort(scaled[0], scaled[1], viewPort));
 
     clear();
     row = 0;
     render();
 
   });
-
-
-
 }
