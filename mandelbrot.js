@@ -1,12 +1,7 @@
 function start(canvas) {
   var ctx = canvas.getContext("2d");
   var ctxScale = 1;
-  var viewPort = {
-    x: 0,
-    y: 0,
-    width: canvas.width,
-    height: canvas.height
-  };
+
 
   //------------------------------------------------
   // messy canvas crap
@@ -23,6 +18,18 @@ function start(canvas) {
     ctxScale = window.devicePixelRatio;
   }
 
+
+
+
+  var viewPort = {
+    x: 0,
+    y: 0,
+    width: canvas.width,
+    height: canvas.height
+  };
+
+
+
   function scalePixel(x, y) {
     return [
       x * ctxScale,
@@ -30,15 +37,19 @@ function start(canvas) {
     ];
   }
   //------------------------------------------------
-  
+
   function clear() {
     ctx.clearRect(0,0,canvas.width,canvas.height);
   }
 
   function mapIntoViewPort(x, y, viewPort) {
+    //return {
+    //  x: viewPort.x + x * (viewPort.width / canvas.width),
+    //  y: viewPort.y + y * (viewPort.height / canvas.height)
+    //}
     return {
-      x: viewPort.x + x * (viewPort.width / canvas.width),
-      y: viewPort.y + y * (viewPort.height / canvas.height)
+      x: x * (viewPort.width / canvas.width),
+      y: y * (viewPort.height / canvas.height)
     }
   }
 
@@ -57,25 +68,54 @@ function start(canvas) {
   }
 
   function centerZoom(s, viewPort) {
+    //return shiftViewPort(
+    //  (viewPort.width - (viewPort.width * s)) / 2,
+    //  (viewPort.height - (viewPort.height * s)) / 2,
+    //  scaleViewPort (s, viewPort)
+    //);
+
+    var scaled = scaleViewPort(s, viewPort);
+    console.log(viewPort.width, scaled.width)
+
+    //return shiftViewPort(
+    //  (viewPort.width - scaled.width) / 2,
+    //  (viewPort.height - scaled.height) / 2,
+    //  scaled
+    //);
+
     return shiftViewPort(
-      (viewPort.width - (viewPort.width * s)) / 2,
-      (viewPort.height - (viewPort.height * s)) / 2,
-      scaleViewPort (s, viewPort)
+      ((viewPort.width - scaled.width) / 2) - ((scaled.width/2) *s),
+      ((viewPort.height - scaled.height) / 2) - ((scaled.height/2) *s),
+      scaled
     );
+
+    //var scaled = scaleViewPort(s, viewPort);
+    //
+    //return _.extend({}, scaled, {
+    //  x: (scaled.x + (viewPort.width - scaled.width)) / 2,
+    //  y: (scaled.y + (viewPort.height - scaled.height)) / 2
+    //});
+
+    //var scaled = scaleViewPort(s, viewPort);
+    //console.log(viewPort);
+    //console.log(scaled);
+    //
+    //return viewPort;
+
   }
 
   // creates a copy of a viewPort centered at x,y
   function centerViewPort(x, y, viewPort) {
     var vxy = mapIntoViewPort(x, y, viewPort);
 
-    //return _.extend({}, viewPort, {
-    //  x: viewPort.x + vxy.x - viewPort.width / 2,
-    //  y: viewPort.y + vxy.y - viewPort.height / 2
-    //});
     return _.extend({}, viewPort, {
-      x: vxy.x - viewPort.width / 2,
-      y: vxy.y - viewPort.height / 2
+      x: viewPort.x + vxy.x - viewPort.width / 2,
+      y: viewPort.y + vxy.y - viewPort.height / 2
     });
+    //return _.extend({}, viewPort, {
+    //  x: vxy.x - viewPort.width / 2,
+    //  y: vxy.y - viewPort.height / 2
+    //});
   }
 
   // creates a copy of a viewPort centered at x,y
@@ -141,7 +181,7 @@ function start(canvas) {
 
     mandelbrotPixelColor = function(x, y) {
       var vxy = mapIntoViewPort(x, y, viewPort),
-        rank = mandelbrotRank(vxy.x, vxy.y, timeout),
+        rank = mandelbrotRank(viewPort.x + vxy.x, viewPort.y + vxy.y, timeout),
         color = [0, 0, 0];
 
       if (rank < timeout) {
@@ -185,7 +225,6 @@ function start(canvas) {
     };
 
     renderRow(y, pixelColorFn);
-
   }
 
   var row = 0;
@@ -197,18 +236,38 @@ function start(canvas) {
     }
   }
 
+  //viewPort = centerZoom(0.09, viewPort);
+
+
+
+  //viewPort = centerZoom(0.01, centerViewPort(-1, 0, viewPort));
+
+  //console.log(viewPort);
+
+
+  viewPort = centerViewPort(-1, 0, viewPort);
+  viewPort = centerZoom(0.01, viewPort);
+
+
+  //console.log(viewPort);
+
   render();
 
-  viewPort = centerZoom(0.01, centerViewPort(-1, 0, viewPort));
+  //viewPort.center(-1, 0).centerZoom(0.01);
+
+
 
   onClick(function(x, y) {
-
     var scaled = scalePixel(x, y);
+    //console.log(scaled);
     viewPort = centerZoom (0.2, centerViewPort(scaled[0], scaled[1], viewPort));
+
+    //viewPort = centerViewPort(scaled[0], scaled[1], viewPort);
+
+    //viewPort = centerZoom(0.5, viewPort);
 
     clear();
     row = 0;
     render();
-
   });
 }
