@@ -1,7 +1,67 @@
-function start(canvas) {
+
+
+var DT = function (canvas) {
   var ctx = canvas.getContext("2d");
   var ctxScale = 1;
+  var mode = 'zoomIn';
+  var fullSize = {x: 2880, y: 1800};
+  var viewScale = 0.1;
+  var size = {x: fullSize.x * viewScale, y: fullSize.y * viewScale};
 
+  canvas.width = size.x;
+  canvas.height = size.y;
+
+
+
+
+  this.setViewScale = function(s) {
+    viewScale = s;
+    size = {x: fullSize.x * viewScale, y: fullSize.y * viewScale};
+    canvas.width = size.x;
+    canvas.height = size.y;
+
+    if (window.devicePixelRatio > 1) {
+      var canvasWidth = canvas.width;
+      var canvasHeight = canvas.height;
+
+      canvas.width = canvasWidth * window.devicePixelRatio;
+      canvas.height = canvasHeight * window.devicePixelRatio;
+      canvas.style.width = canvasWidth;
+      canvas.style.height = canvasHeight;
+
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      ctxScale = window.devicePixelRatio;
+
+      console.log(ctxScale);
+    }
+
+
+    clear();
+    row = 0;
+    render();
+  };
+
+
+
+  this.makeImage = function() {
+    var img = new Image();
+    img.src = canvas.toDataURL();
+    document.body.appendChild(img);
+
+    img.width /= ctxScale;
+  };
+
+  this.modeZoomIn = function() {
+    mode = 'zoomIn';
+  };
+
+  this.modeZoomOut = function() {
+    mode = 'zoomOut';
+  };
+
+  this.modeCenter = function() {
+    mode = 'center';
+  };
 
   //------------------------------------------------
   // messy canvas crap
@@ -18,7 +78,9 @@ function start(canvas) {
     ctxScale = window.devicePixelRatio;
   }
 
-
+  //canvas._dt.makeImage = function() {
+  //  console.log('test');
+  //}
 
 
   var viewPort = {
@@ -68,40 +130,13 @@ function start(canvas) {
   }
 
   function centerZoom(s, viewPort) {
-    //return shiftViewPort(
-    //  (viewPort.width - (viewPort.width * s)) / 2,
-    //  (viewPort.height - (viewPort.height * s)) / 2,
-    //  scaleViewPort (s, viewPort)
-    //);
-
     var scaled = scaleViewPort(s, viewPort);
-    console.log(viewPort.width, scaled.width)
-
-    //return shiftViewPort(
-    //  (viewPort.width - scaled.width) / 2,
-    //  (viewPort.height - scaled.height) / 2,
-    //  scaled
-    //);
 
     return shiftViewPort(
       ((viewPort.width - scaled.width) / 2) - ((scaled.width/2) *s),
       ((viewPort.height - scaled.height) / 2) - ((scaled.height/2) *s),
       scaled
     );
-
-    //var scaled = scaleViewPort(s, viewPort);
-    //
-    //return _.extend({}, scaled, {
-    //  x: (scaled.x + (viewPort.width - scaled.width)) / 2,
-    //  y: (scaled.y + (viewPort.height - scaled.height)) / 2
-    //});
-
-    //var scaled = scaleViewPort(s, viewPort);
-    //console.log(viewPort);
-    //console.log(scaled);
-    //
-    //return viewPort;
-
   }
 
   // creates a copy of a viewPort centered at x,y
@@ -211,12 +246,18 @@ function start(canvas) {
 
   // y: row
   // pixelColorFn: (x,y) => [r,g,b,a]
-  function renderRow(y, pixelColorFn) {
-    var ctxRow = ctx.createImageData(canvas.width, 1),
+  function renderRow(y, width, pixelColorFn) {
+    var ctxRow = ctx.createImageData(width, 1),
       ctxRowData = ctxRow.data;
 
-    renderRow = function(y, pixelColorFn) {
-      _.times(canvas.width, function(x) {
+    renderRow = function(y, width, pixelColorFn) {
+
+      if (width != ctxRow.width) {
+        ctxRow = ctx.createImageData(width, 1);
+        ctxRowData = ctxRow.data;
+      }
+
+      _.times(width, function(x) {
         _.each(pixelColorFn(x, y), function(v, i) {
           ctxRowData[4 * x + i] = v;
         });
@@ -224,47 +265,35 @@ function start(canvas) {
       ctx.putImageData(ctxRow, 0, y);
     };
 
-    renderRow(y, pixelColorFn);
+    renderRow(y, width, pixelColorFn);
+
   }
 
   var row = 0;
   function render() {
-    renderRow(row, mandelbrotPixelColor);
+    renderRow(row, canvas.width, mandelbrotPixelColor);
     row += 1;
     if (row < canvas.height) {
       requestAnimationFrame(render);
     }
   }
 
-  //viewPort = centerZoom(0.09, viewPort);
-
-
-
-  //viewPort = centerZoom(0.01, centerViewPort(-1, 0, viewPort));
-
-  //console.log(viewPort);
-
 
   viewPort = centerViewPort(-1, 0, viewPort);
   viewPort = centerZoom(0.01, viewPort);
 
-
-  //console.log(viewPort);
-
   render();
-
-  //viewPort.center(-1, 0).centerZoom(0.01);
-
-
 
   onClick(function(x, y) {
     var scaled = scalePixel(x, y);
-    //console.log(scaled);
-    viewPort = centerZoom (0.2, centerViewPort(scaled[0], scaled[1], viewPort));
 
-    //viewPort = centerViewPort(scaled[0], scaled[1], viewPort);
-
-    //viewPort = centerZoom(0.5, viewPort);
+    if (mode === 'zoomIn') {
+      viewPort = centerZoom(0.2, centerViewPort(scaled[0], scaled[1], viewPort));
+    } else if (mode === 'zoomOut') {
+      viewPort = centerZoom(1.1, centerViewPort(scaled[0], scaled[1], viewPort));
+    } else {
+      viewPort = centerViewPort(scaled[0], scaled[1], viewPort);
+    }
 
     clear();
     row = 0;

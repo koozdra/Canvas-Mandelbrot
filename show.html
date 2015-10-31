@@ -4,7 +4,47 @@
         <script src="lib/jquery.min.js"></script>
         <script src="mandelbrot.js"></script>
     </head>
-    <body onload="start(document.getElementById('canvas'))">
+    <body onload="dt = new DT(document.getElementById('canvas'));">
         <canvas id="canvas" width="300" height="200" style="border: 1px solid;"></canvas>
+
+        <div>
+            <div>Image</div>
+            <ul>
+                <li>
+                    <a href="#" onclick="dt.makeImage(); return false;">Make Image</a>
+                </li>
+            </ul>
+        </div>
+        <div>
+            <div>Mode</div>
+                <ul>
+                    <li>
+                        <a href="#" onclick="dt.modeZoomIn(); return false;">Zoom In</a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="dt.modeZoomOut(); return false;">Zoom Out</a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="dt.modeCenter(); return false;">Center</a>
+                    </li>
+                </ul>
+        </div>
+        <div>
+            <div>Size</div>
+            <ul>
+                <li>
+                    <a href="#" onclick="dt.setViewScale(0.1); return false;">Tenth</a>
+                </li>
+                <li>
+                    <a href="#" onclick="dt.setViewScale(0.25); return false;">Quarter</a>
+                </li>
+                <li>
+                    <a href="#" onclick="dt.setViewScale(0.5); return false;">Half</a>
+                </li>
+                <li>
+                    <a href="#" onclick="dt.setViewScale(1); return false;">Full</a>
+                </li>
+            </ul>
+        </div>
     </body>
 </html>
